@@ -1,21 +1,18 @@
 import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
-import { createRequire } from 'module';
+import pkg from 'multer-storage-cloudinary';
+const { CloudinaryStorage } = pkg; // Manually extracting the constructor
+import cloudinary from './cloudinary.js';
 
-const require = createRequire(import.meta.url);
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const StorageClass = CloudinaryStorage || CloudinaryStorage.CloudinaryStorage;
 
-const storage = new CloudinaryStorage({
-  cloudinary,
+const storage = new StorageClass({
+  cloudinary: cloudinary,
   params: {
     folder: 'quicktask/uploads',
     allowed_formats: ['jpg', 'jpeg', 'png'],
-    transformation: [
-      { width: 300, height: 300, crop: 'fill' }
-    ],
+    transformation: [{ width: 300, height: 300, crop: 'fill' }],
   },
 });
 
 const upload = multer({ storage });
-
 export default upload;
