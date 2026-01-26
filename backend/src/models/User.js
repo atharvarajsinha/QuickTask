@@ -18,10 +18,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    profilePhoto: {
-      type: String,
-      default: "",
-    },
     darkMode: {
       type: Boolean,
       default: false,

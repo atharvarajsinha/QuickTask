@@ -5,7 +5,7 @@ import generateToken from '../config/jwt.js';
 // REGISTER
 export const register = async (req, res) => {
   try {
-    const { name, email, password, profilePhoto } = req.body;
+    const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'All required fields must be filled' });
@@ -23,7 +23,6 @@ export const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      profilePhoto: profilePhoto || '',
     });
 
     const token = generateToken({
@@ -38,7 +37,6 @@ export const register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        profilePhoto: user.profilePhoto,
         darkMode: user.darkMode,
       },
     });
@@ -78,7 +76,6 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        profilePhoto: user.profilePhoto,
         darkMode: user.darkMode,
       },
     });
