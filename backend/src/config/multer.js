@@ -1,11 +1,10 @@
 import multer from 'multer';
-import pkg from 'multer-storage-cloudinary';
-const { CloudinaryStorage } = pkg; // Manually extracting the constructor
+import cloudinaryStoragePkg from 'multer-storage-cloudinary';
 import cloudinary from './cloudinary.js';
 
-const StorageClass = CloudinaryStorage || CloudinaryStorage.CloudinaryStorage;
+const { CloudinaryStorage } = cloudinaryStoragePkg;
 
-const storage = new StorageClass({
+const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'quicktask/uploads',
