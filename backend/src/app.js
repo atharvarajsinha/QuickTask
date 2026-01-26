@@ -15,8 +15,5 @@ app.use('/tasks', tasksRoutes);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Node server alive...' });
 });
-app.get('/', (req, res) => {
-  res.send('Welcome to the Task Management API');
-});
 
 export default app;
