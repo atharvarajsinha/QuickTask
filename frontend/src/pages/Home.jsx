@@ -129,7 +129,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
             {/* Total Users Card */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-lg dark:hover:shadow-blue-900/10 transition-all duration-200">
               <div className="flex items-start space-x-4">
@@ -150,10 +150,10 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                    Active Users
+                    Total Users
                   </p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                    {stats.active_users?.toLocaleString() || 0}
+                    {stats.total_users?.toLocaleString() || 0}
                   </p>
                 </div>
               </div>
@@ -241,6 +241,35 @@ export default function Home() {
                   </p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                     {stats.completion_rate?.toFixed(1) || 0}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Users Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-lg dark:hover:shadow-blue-900/10 transition-all duration-200">
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30">
+                  <svg
+                    className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5 0H21m-4.5 0H12m4.5 0a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                    Active Users
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {stats.active_users?.toLocaleString() || 0}
                   </p>
                 </div>
               </div>
