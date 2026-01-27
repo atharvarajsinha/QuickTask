@@ -156,11 +156,11 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 
 ## How to Run Each Service
 
-| Service        | Command                      | Port |
-| -------------- | ---------------------------- | ---- |
-| Backend        | `npm run dev`                | 5000 |
-| Frontend       | `npm run dev`                | 5173 |
-| Python Service | `python manage.py runserver` | 8000 |
+| Service        | Command                      | Port | Deployed |
+| -------------- | ---------------------------- | ---- |  ------  |
+| Backend        | `npm run dev`                | 5000 |  Vercel  |
+| Frontend       | `npm run dev`                | 5173 |  Render  |
+| Python Service | `python manage.py runserver` | 8000 |  Render  |
 
 ---
 
