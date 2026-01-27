@@ -206,13 +206,13 @@ Query Parameters Supported:
 
 ## Screenshots of the Application
 
+![Homepage](screenshots/homepage.png)
+
 ![Login](screenshots/login.png)
 
 ![Dashboard](screenshots/dashboard.png)
 
 ![Tasks](screenshots/tasks.png)
-
-![Analytics](screenshots/analytics.png)
 
 ---
 
