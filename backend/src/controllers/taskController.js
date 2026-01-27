@@ -15,49 +15,37 @@ const buildTaskFilter = (query, userId) => {
     filter.priority = query.priority;
   }
 
-  // SEARCH (title)
+  // SEARCH
   if (query.search) {
-    filter.title = {
-      $regex: query.search,
-      $options: 'i',
-    };
+    filter.title = { $regex: query.search, $options: 'i' };
   }
 
-  // DATE FILTERS
-  if (
-    query.dueBefore ||
-    query.dueAfter ||
-    query.dueFrom ||
-    query.dueTo ||
-    query.overdue
-  ) {
-    if (query.overdue === 'true') {
-      filter.dueDate = {
-        $exists: true,
-        $ne: null,
-        $type: 'date',
-        $lt: new Date(),
-      };
-    } else {
-      filter.dueDate = {};
+  // OVERDUE (only tasks with dueDate)
+  if (query.overdue === 'true') {
+    filter.dueDate = {
+      $exists: true,
+      $ne: null,
+      $lt: new Date(),
+    };
+    return filter;
+  }
 
-      if (query.dueAfter) {
-        filter.dueDate.$gte = new Date(query.dueAfter);
-      }
+  // DATE RANGE FILTERS
+  if (query.dueAfter || query.dueBefore || query.dueFrom || query.dueTo) {
+    filter.dueDate = {
+      $exists: true,
+      $ne: null,
+    };
 
-      if (query.dueBefore) {
-        filter.dueDate.$lte = new Date(query.dueBefore);
-      }
+    if (query.dueAfter || query.dueFrom) {
+      filter.dueDate.$gte = new Date(query.dueAfter || query.dueFrom);
+    }
 
-      if (query.dueFrom) {
-        filter.dueDate.$gte = new Date(query.dueFrom);
-      }
-
-      if (query.dueTo) {
-        filter.dueDate.$lte = new Date(query.dueTo);
-      }
+    if (query.dueBefore || query.dueTo) {
+      filter.dueDate.$lte = new Date(query.dueBefore || query.dueTo);
     }
   }
+
   return filter;
 };
 
