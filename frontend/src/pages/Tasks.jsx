@@ -47,7 +47,18 @@ const Tasks = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [filters, search]);
+  }, [filters]);
+
+  const filteredTasks = tasks.filter((task) => {
+    if (!search.trim()) return true;
+
+    const query = search.toLowerCase();
+
+    return (
+      task.title?.toLowerCase().includes(query) ||
+      task.description?.toLowerCase().includes(query)
+    );
+  });
 
   const fetchTasks = async () => {
     try {
@@ -58,7 +69,6 @@ const Tasks = () => {
       // BASIC FILTERS
       if (filters.status) params.append("status", filters.status);
       if (filters.priority) params.append("priority", filters.priority);
-      if (search) params.append("search", search);
 
       // DATE FILTERS
       if (filters.dueDateFilter === "dueFromTo") {
@@ -478,13 +488,13 @@ const Tasks = () => {
               Total Tasks
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {tasks.length}
+              {filteredTasks.length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500 dark:text-gray-400">Todo</div>
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
-              {tasks.filter((t) => t.status === "Todo").length}
+              {filteredTasks.filter((t) => t.status === "Todo").length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -492,7 +502,7 @@ const Tasks = () => {
               In Progress
             </div>
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-500">
-              {tasks.filter((t) => t.status === "In Progress").length}
+              {filteredTasks.filter((t) => t.status === "In Progress").length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -500,26 +510,24 @@ const Tasks = () => {
               Completed
             </div>
             <div className="text-2xl font-bold text-green-600 dark:text-green-500">
-              {tasks.filter((t) => t.status === "Completed").length}
+              {filteredTasks.filter((t) => t.status === "Completed").length}
             </div>
           </div>
         </div>
 
         {/* Task List */}
-        <div>
-          <TaskList
-            tasks={tasks}
-            refreshTasks={fetchTasks}
-            showCreateModal={showCreateModal}
-            onCloseCreateModal={() => setShowCreateModal(false)}
-            emptyStateProps={{
-              title: "No tasks found",
-              description:
-                "Try adjusting your filters or create a new task to get started",
-              icon: "📝",
-            }}
-          />
-        </div>
+        <TaskList
+          tasks={filteredTasks}
+          refreshTasks={fetchTasks}
+          showCreateModal={showCreateModal}
+          onCloseCreateModal={() => setShowCreateModal(false)}
+          emptyStateProps={{
+            title: "No tasks found",
+            description:
+              "Try adjusting your filters or create a new task to get started",
+            icon: "📝",
+          }}
+        />
       </div>
     </div>
   );
