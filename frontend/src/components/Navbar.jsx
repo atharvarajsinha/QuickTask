@@ -28,7 +28,7 @@ const Navbar = () => {
     closeMenu();
 
     if (user) {
-      handleLogout();
+      navigate("/dashboard");
     } else {
       navigate("/");
     }

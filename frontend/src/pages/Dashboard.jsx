@@ -607,15 +607,15 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {[
             {
               title: "Total Tasks",
               value: stats?.total_tasks || 0,
-              icon: "📊",
-              color: "blue",
-              bgColor: isDarkMode ? "bg-blue-900/30" : "bg-blue-100",
-              textColor: isDarkMode ? "text-blue-400" : "text-blue-600",
+              icon: "📋",
+              color: "indigo",
+              bgColor: isDarkMode ? "bg-indigo-900/30" : "bg-indigo-100",
+              textColor: isDarkMode ? "text-indigo-400" : "text-indigo-600",
             },
             {
               title: "Completed",
@@ -626,12 +626,28 @@ const Dashboard = () => {
               textColor: isDarkMode ? "text-green-400" : "text-green-600",
             },
             {
+              title: "Pending Tasks",
+              value: stats?.pending_tasks || 0,
+              icon: "🕒",
+              color: "blue",
+              bgColor: isDarkMode ? "bg-blue-900/30" : "bg-blue-100",
+              textColor: isDarkMode ? "text-blue-400" : "text-blue-600",
+            },
+            {
               title: "Due Soon",
               value: stats?.due_tasks || 0,
               icon: "⏳",
               color: "yellow",
               bgColor: isDarkMode ? "bg-yellow-900/30" : "bg-yellow-100",
               textColor: isDarkMode ? "text-yellow-400" : "text-yellow-600",
+            },
+            {
+              title: "Overdue Tasks",
+              value: stats?.overdue_tasks || 0,
+              icon: "⚠️",
+              color: "red",
+              bgColor: isDarkMode ? "bg-red-900/30" : "bg-red-100",
+              textColor: isDarkMode ? "text-red-400" : "text-red-600",
             },
             {
               title: "Completion Rate",
