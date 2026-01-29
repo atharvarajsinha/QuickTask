@@ -10,7 +10,7 @@ import {
   ClipboardDocumentListIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
-  TagIcon, // Added for Categories
+  TagIcon,
 } from "@heroicons/react/24/outline";
 
 const Navbar = () => {
