@@ -7,7 +7,10 @@ const buildTaskFilter = (query, userId) => {
 
   // STATUS
   if (query.status) {
-    filter.status = query.status;
+    const statuses = query.status.split(",");
+    filter.status = statuses.length > 1
+      ? { $in: statuses }
+      : statuses[0];
   }
 
   // PRIORITY
