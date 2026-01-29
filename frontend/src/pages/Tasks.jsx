@@ -346,56 +346,6 @@ const Tasks = () => {
                 </button>
               ))}
 
-              {/* Category Quick Filters */}
-              <div className="relative group">
-                <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
-                >
-                  <TagIcon className="h-5 w-5" />
-                  {getSelectedCategoryNames().length > 0
-                    ? `${getSelectedCategoryNames().length} Category${getSelectedCategoryNames().length > 1 ? 's' : ''}`
-                    : "Categories"}
-                  <ChevronDownIcon className="h-4 w-4" />
-                </button>
-                
-                {/* Category Dropdown */}
-                <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10 hidden group-hover:block">
-                  <div className="p-3">
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => handleFilterChange("uncategorized", !filters.uncategorized)}
-                        className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 ${
-                          filters.uncategorized
-                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}
-                      >
-                        <div className="w-3 h-3 rounded-full border border-gray-400 dark:border-gray-600"></div>
-                        Uncategorized Tasks
-                      </button>
-                      
-                      {categories.map((category) => (
-                        <button
-                          key={category._id}
-                          onClick={() => handleFilterChange("category", category._id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 ${
-                            filters.category === category._id
-                              ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                              : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: category.color }}
-                          />
-                          {category.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
