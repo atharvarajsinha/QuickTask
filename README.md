@@ -189,6 +189,14 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 * `PATCH /tasks/:id/status` - Update Task Status
 * `GET /tasks/export/csv` - Export Tasks to CSV
 
+### Category
+
+* `GET /category/` – Fetch all Category
+* `POST /category/` – Create new Category
+* `GET /category/:id/` – Get particular Category
+* `PUT /category/:id/update` - Update Category
+* `DELETE /category/:id/delete` - Delete Category
+
 Query Parameters Supported:
 * status
 * priority
