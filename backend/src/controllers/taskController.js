@@ -15,13 +15,13 @@ const buildTaskFilter = (query, userId) => {
     filter.priority = query.priority;
   }
 
-  // CATEGORY (single or multiple)
-  if (query.category) {
-    if (mongoose.Types.ObjectId.isValid(query.category)) {
-      filter.category = query.category;
-    }
+  // CATEGORY
+  if (query.uncategorized === "true" || query.category === "null") {
+    filter.category = { $in: [null, undefined] };
   }
-  if (query.categories) {
+  else if (query.category && mongoose.Types.ObjectId.isValid(query.category)) {
+    filter.category = query.category;
+  }else if (query.categories) {
     const categoryIds = query.categories
       .split(",")
       .filter(id => mongoose.Types.ObjectId.isValid(id));
