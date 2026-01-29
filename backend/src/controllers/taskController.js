@@ -1,7 +1,7 @@
 import Task from "../models/Task.js";
 import { Parser } from "json2csv";
+import mongoose from "mongoose";
 
-// Helper function to build filter object
 const buildTaskFilter = (query, userId) => {
   const filter = { user: userId };
 
@@ -15,13 +15,28 @@ const buildTaskFilter = (query, userId) => {
     filter.priority = query.priority;
   }
 
+  // CATEGORY (single or multiple)
+  if (query.category) {
+    if (mongoose.Types.ObjectId.isValid(query.category)) {
+      filter.category = query.category;
+    }
+  }
+  if (query.categories) {
+    const categoryIds = query.categories
+      .split(",")
+      .filter(id => mongoose.Types.ObjectId.isValid(id));
+    if (categoryIds.length > 0) {
+      filter.category = { $in: categoryIds };
+    }
+  }
+
   // SEARCH
   if (query.search) {
-    filter.title = { $regex: query.search, $options: 'i' };
+    filter.title = { $regex: query.search, $options: "i" };
   }
 
   // OVERDUE (only tasks with dueDate)
-  if (query.overdue === 'true') {
+  if (query.overdue === "true") {
     filter.dueDate = {
       $exists: true,
       $ne: null,
@@ -90,7 +105,7 @@ export const getTasks = async (req, res) => {
     const filter = buildTaskFilter(req.query, userId);
     const sort = buildTaskSort(req.query);
 
-    const tasks = await Task.find(filter).sort(sort);
+    const tasks = await Task.find(filter).populate('category', 'name color').sort(sort);
 
     res.status(200).json(tasks);
   } catch (error) {
