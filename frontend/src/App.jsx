@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Tasks from './pages/Tasks';
+import Category from './pages/Category';
 
 function App() {
   return (
@@ -36,7 +37,6 @@ function App() {
           <Navbar />
           <main className="grow">
             <Routes>
-              {/* <Route path="/" element={<Navigate to="" replace />} /> */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -53,6 +53,11 @@ function App() {
               <Route path="/tasks" element={
                 <ProtectedRoute>
                   <Tasks />
+                </ProtectedRoute>
+              } />
+              <Route path="/categories" element={
+                <ProtectedRoute>
+                  <Category />
                 </ProtectedRoute>
               } />
             </Routes>

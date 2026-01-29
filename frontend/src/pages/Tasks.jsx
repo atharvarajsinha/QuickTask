@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { taskAPI } from "../api/nodeApi";
+import { taskAPI, categoryAPI } from "../api/nodeApi";
 import { useAuth } from "../context/AuthContext";
 import TaskList from "../components/TaskList";
 import toast from "react-hot-toast";
@@ -13,17 +13,16 @@ import {
   ChevronDownIcon,
   ClockIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon,
-  DocumentTextIcon,
-  FlagIcon,
   ArrowPathIcon,
   ListBulletIcon,
   ArrowUpIcon,
   ArrowDownIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline";
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -33,7 +32,9 @@ const Tasks = () => {
   const [filters, setFilters] = useState({
     status: "",
     priority: "",
-    dueDateFilter: "", // 'dueFromTo', 'dueBefore', 'dueAfter'
+    category: "",
+    categories: "",
+    dueDateFilter: "",
     dueFrom: "",
     dueTo: "",
     dueBefore: "",
@@ -41,24 +42,24 @@ const Tasks = () => {
     overdue: false,
     sortBy: "createdAt",
     order: "desc",
+    search: "",
+    uncategorized: false,
   });
 
-  const [search, setSearch] = useState("");
-
   useEffect(() => {
+    fetchCategories();
     fetchTasks();
   }, [filters]);
 
-  const filteredTasks = tasks.filter((task) => {
-    if (!search.trim()) return true;
-
-    const query = search.toLowerCase();
-
-    return (
-      task.title?.toLowerCase().includes(query) ||
-      task.description?.toLowerCase().includes(query)
-    );
-  });
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryAPI.getAllCategories();
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+      toast.error("Failed to load categories");
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -69,6 +70,23 @@ const Tasks = () => {
       // BASIC FILTERS
       if (filters.status) params.append("status", filters.status);
       if (filters.priority) params.append("priority", filters.priority);
+      if (filters.search) params.append("search", filters.search);
+
+      // CATEGORY FILTERS
+      if (filters.uncategorized) {
+        params.append("uncategorized", "true");
+      } else if (filters.category) {
+        if (filters.category === "null") {
+          params.append("category", "null");
+        } else {
+          params.append("category", filters.category);
+        }
+      }
+
+      // MULTIPLE CATEGORIES
+      if (filters.categories && !filters.uncategorized) {
+        params.append("categories", filters.categories);
+      }
 
       // DATE FILTERS
       if (filters.dueDateFilter === "dueFromTo") {
@@ -96,11 +114,10 @@ const Tasks = () => {
       }
 
       const queryString = params.toString();
-
       const response = await taskAPI.getAllTasks(queryString);
       setTasks(response.data);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching tasks:", error);
       toast.error("Failed to load tasks");
     } finally {
       setLoading(false);
@@ -138,12 +155,57 @@ const Tasks = () => {
         dueAfter: "",
       }));
     }
+
+    // Handle category filter conflicts
+    if (key === "category" && value) {
+      setFilters((prev) => ({
+        ...prev,
+        categories: "",
+        uncategorized: false,
+      }));
+    }
+
+    if (key === "categories" && value) {
+      setFilters((prev) => ({
+        ...prev,
+        category: "",
+        uncategorized: false,
+      }));
+    }
+
+    if (key === "uncategorized") {
+      setFilters((prev) => ({
+        ...prev,
+        category: "",
+        categories: "",
+      }));
+    }
+
+    if (key === "overdue" && value) {
+      setFilters((prev) => ({
+        ...prev,
+        dueDateFilter: "",
+        dueFrom: "",
+        dueTo: "",
+        dueBefore: "",
+        dueAfter: "",
+      }));
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setFilters((prev) => ({
+      ...prev,
+      search: value,
+    }));
   };
 
   const resetFilters = () => {
     setFilters({
       status: "",
       priority: "",
+      category: "",
+      categories: "",
       dueDateFilter: "",
       dueFrom: "",
       dueTo: "",
@@ -152,23 +214,19 @@ const Tasks = () => {
       overdue: false,
       sortBy: "createdAt",
       order: "desc",
+      search: "",
+      uncategorized: false,
     });
-    setSearch("");
   };
 
   const getActiveFilterCount = () => {
     let count = 0;
     if (filters.status) count++;
     if (filters.priority) count++;
-    if (
-      filters.dueFrom ||
-      filters.dueTo ||
-      filters.dueBefore ||
-      filters.dueAfter
-    )
-      count++;
+    if (filters.category || filters.categories || filters.uncategorized) count++;
+    if (filters.search) count++;
+    if (filters.dueDateFilter) count++;
     if (filters.overdue) count++;
-    if (search) count++;
     return count;
   };
 
@@ -183,6 +241,29 @@ const Tasks = () => {
       default:
         return "Select Date Filter";
     }
+  };
+
+  // Get selected category names for display
+  const getSelectedCategoryNames = () => {
+    if (filters.uncategorized) return ["Uncategorized"];
+    if (filters.category === "null") return ["Uncategorized"];
+    if (filters.category && filters.category !== "null") {
+      const category = categories.find(c => c._id === filters.category);
+      return category ? [category.name] : [];
+    }
+    if (filters.categories) {
+      const categoryIds = filters.categories.split(",");
+      return categories
+        .filter(c => categoryIds.includes(c._id))
+        .map(c => c.name);
+    }
+    return [];
+  };
+
+  // Get category color by ID
+  const getCategoryColor = (categoryId) => {
+    const category = categories.find(c => c._id === categoryId);
+    return category ? category.color : "#6b7280";
   };
 
   if (loading) {
@@ -234,14 +315,15 @@ const Tasks = () => {
               <input
                 type="text"
                 placeholder="Search tasks by title or description..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={filters.search}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
 
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-2">
+              {/* Status Filters */}
               {["", "Todo", "In Progress", "Completed"].map((status) => (
                 <button
                   key={status || "all"}
@@ -263,6 +345,56 @@ const Tasks = () => {
                   {status || "All"}
                 </button>
               ))}
+
+              {/* Category Quick Filters */}
+              <div className="relative group">
+                <button
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
+                >
+                  <TagIcon className="h-5 w-5" />
+                  {getSelectedCategoryNames().length > 0
+                    ? `${getSelectedCategoryNames().length} Category${getSelectedCategoryNames().length > 1 ? 's' : ''}`
+                    : "Categories"}
+                  <ChevronDownIcon className="h-4 w-4" />
+                </button>
+                
+                {/* Category Dropdown */}
+                <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10 hidden group-hover:block">
+                  <div className="p-3">
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => handleFilterChange("uncategorized", !filters.uncategorized)}
+                        className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 ${
+                          filters.uncategorized
+                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        <div className="w-3 h-3 rounded-full border border-gray-400 dark:border-gray-600"></div>
+                        Uncategorized Tasks
+                      </button>
+                      
+                      {categories.map((category) => (
+                        <button
+                          key={category._id}
+                          onClick={() => handleFilterChange("category", category._id)}
+                          className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 ${
+                            filters.category === category._id
+                              ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                              : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                          }`}
+                        >
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.color }}
+                          />
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
@@ -291,6 +423,56 @@ const Tasks = () => {
               )}
             </div>
 
+            {/* Selected Category Badges */}
+            {getSelectedCategoryNames().length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {getSelectedCategoryNames().map((name, index) => {
+                  const isUncategorized = name === "Uncategorized";
+                  const category = categories.find(c => c.name === name);
+                  const categoryColor = isUncategorized ? "#6b7280" : (category?.color || "#6b7280");
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm"
+                      style={{
+                        backgroundColor: `${categoryColor}20`,
+                        color: categoryColor,
+                        border: `1px solid ${categoryColor}40`,
+                      }}
+                    >
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: categoryColor }}
+                      />
+                      {name}
+                      <button
+                        onClick={() => {
+                          if (isUncategorized) {
+                            handleFilterChange("uncategorized", false);
+                          } else if (filters.category) {
+                            handleFilterChange("category", "");
+                          } else if (filters.categories) {
+                            const categoryId = category?._id;
+                            if (categoryId) {
+                              const newCategories = filters.categories
+                                .split(",")
+                                .filter(id => id !== categoryId)
+                                .join(",");
+                              handleFilterChange("categories", newCategories || "");
+                            }
+                          }
+                        }}
+                        className="ml-1 hover:opacity-70 cursor-pointer"
+                      >
+                        <XMarkIcon className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Advanced Filters Panel */}
             {showAdvancedFilters && (
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
@@ -314,6 +496,46 @@ const Tasks = () => {
                     </select>
                   </div>
 
+                  {/* Single Category Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={filters.category}
+                      onChange={(e) =>
+                        handleFilterChange("category", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Categories</option>
+                      <option value="null">Uncategorized</option>
+                      {categories.map((category) => (
+                        <option key={category._id} value={category._id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Multiple Categories Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Multiple Categories (comma-separated IDs)
+                    </label>
+                    <input
+                      type="text"
+                      value={filters.categories}
+                      onChange={(e) =>
+                        handleFilterChange("categories", e.target.value)
+                      }
+                      placeholder="e.g., id1,id2,id3"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   {/* Date Filter Type */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -334,7 +556,7 @@ const Tasks = () => {
                   </div>
 
                   {/* Overdue Filter */}
-                  <div className="flex items-center gap-2 mt-4">
+                  <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       id="overdue"
@@ -349,6 +571,25 @@ const Tasks = () => {
                       className="text-sm font-medium text-gray-700 dark:text-gray-300"
                     >
                       Show Overdue Only
+                    </label>
+                  </div>
+
+                  {/* Uncategorized Filter */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="uncategorized"
+                      checked={filters.uncategorized}
+                      onChange={(e) =>
+                        handleFilterChange("uncategorized", e.target.checked)
+                      }
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="uncategorized"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      Uncategorized Only
                     </label>
                   </div>
                 </div>
@@ -488,13 +729,13 @@ const Tasks = () => {
               Total Tasks
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {filteredTasks.length}
+              {tasks.length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500 dark:text-gray-400">Todo</div>
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
-              {filteredTasks.filter((t) => t.status === "Todo").length}
+              {tasks.filter((t) => t.status === "Todo").length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -502,7 +743,7 @@ const Tasks = () => {
               In Progress
             </div>
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-500">
-              {filteredTasks.filter((t) => t.status === "In Progress").length}
+              {tasks.filter((t) => t.status === "In Progress").length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -510,14 +751,14 @@ const Tasks = () => {
               Completed
             </div>
             <div className="text-2xl font-bold text-green-600 dark:text-green-500">
-              {filteredTasks.filter((t) => t.status === "Completed").length}
+              {tasks.filter((t) => t.status === "Completed").length}
             </div>
           </div>
         </div>
 
         {/* Task List */}
         <TaskList
-          tasks={filteredTasks}
+          tasks={tasks}
           refreshTasks={fetchTasks}
           showCreateModal={showCreateModal}
           onCloseCreateModal={() => setShowCreateModal(false)}

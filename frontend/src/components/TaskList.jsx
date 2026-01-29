@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { taskAPI } from "../api/nodeApi";
+import { taskAPI, categoryAPI } from "../api/nodeApi";
 import toast from "react-hot-toast";
 import {
   PencilIcon,
@@ -26,8 +26,28 @@ const NewTaskForm = ({ onClose, onCreated }) => {
     status: "Todo",
     priority: "Medium",
     dueDate: "",
+    category: "",
   });
+  const [categories, setCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
+
+  // Fetch categories when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsCategoriesLoading(true);
+      try {
+        const response = await categoryAPI.getAllCategories();
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        toast.error("Failed to load categories");
+      } finally {
+        setIsCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +58,11 @@ const NewTaskForm = ({ onClose, onCreated }) => {
 
     setIsSubmitting(true);
     try {
-      await taskAPI.createTask(formData);
+      const payload = {
+        ...formData,
+        category: formData.category || null,
+      };
+      await taskAPI.createTask(payload);
       toast.success("Task created successfully!");
       onCreated();
       onClose();
@@ -48,8 +72,10 @@ const NewTaskForm = ({ onClose, onCreated }) => {
         status: "Todo",
         priority: "Medium",
         dueDate: "",
+        category: "",
       });
     } catch (error) {
+      console.error("Error creating task:", error);
       toast.error("Failed to create task");
     } finally {
       setIsSubmitting(false);
@@ -119,7 +145,7 @@ const NewTaskForm = ({ onClose, onCreated }) => {
               onChange={(e) =>
                 setFormData({ ...formData, priority: e.target.value })
               }
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 appearance-none"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 appearance-none cursor-pointer"
             >
               <option value="Low">Low Priority</option>
               <option value="Medium">Medium Priority</option>
@@ -138,9 +164,68 @@ const NewTaskForm = ({ onClose, onCreated }) => {
               onChange={(e) =>
                 setFormData({ ...formData, dueDate: e.target.value })
               }
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer"
             />
           </div>
+        </div>
+
+        {/* Category Selection Dropdown */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <TagIcon className="w-4 h-4" />
+            Category
+          </label>
+          <div className="relative">
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 appearance-none cursor-pointer"
+              disabled={isCategoriesLoading}
+            >
+              <option value="">No Category</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+              <ChevronDownIcon className="h-5 w-5" />
+            </div>
+            
+            {/* Category preview */}
+            {formData.category && categories.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ 
+                    backgroundColor: categories.find(c => c._id === formData.category)?.color || '#6b7280' 
+                  }}
+                />
+                <span className="text-gray-600 dark:text-gray-400">
+                  Selected:{" "}
+                  <span className="font-medium" style={{ 
+                    color: categories.find(c => c._id === formData.category)?.color || 'inherit' 
+                  }}>
+                    {categories.find(c => c._id === formData.category)?.name}
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {isCategoriesLoading ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+              <ArrowPathIcon className="w-4 h-4 animate-spin" />
+              Loading categories...
+            </p>
+          ) : categories.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No categories available. Create categories first to assign them to tasks.
+            </p>
+          ) : null}
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
@@ -166,10 +251,35 @@ const NewTaskForm = ({ onClose, onCreated }) => {
 
 const TaskItem = ({ task, refreshTasks }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ ...task });
+  const [editData, setEditData] = useState({
+    title: task.title ?? "",
+    description: task.description ?? "",
+    status: task.status ?? "Todo",
+    priority: task.priority ?? "Medium",
+    dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
+    category: task.category && typeof task.category === "object" ? task.category._id : task.category ?? "",
+  });
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
+
+  // Fetch categories when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsCategoriesLoading(true);
+      try {
+        const response = await categoryAPI.getAllCategories();
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setIsCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Format date for form input (YYYY-MM-DD)
   const formatDateForInput = (dateString) => {
@@ -225,11 +335,16 @@ const TaskItem = ({ task, refreshTasks }) => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await taskAPI.updateTask(task._id, editData);
+      const payload = {
+        ...editData,
+        category: editData.category || null,
+      };
+      await taskAPI.updateTask(task._id, payload);
       toast.success("Task updated successfully");
       setIsEditing(false);
       refreshTasks();
     } catch (error) {
+      console.error("Error updating task:", error);
       toast.error("Failed to update task");
     }
   };
@@ -329,6 +444,24 @@ const TaskItem = ({ task, refreshTasks }) => {
     return config[status] || config.Todo;
   };
 
+  // Get category data for the task
+  const getTaskCategory = () => {
+    if (!task.category) return null;
+    
+    // If category is already populated (object with name and color)
+    if (typeof task.category === 'object' && task.category.name) {
+      return task.category;
+    }
+    
+    // If category is just an ID, find it in categories list
+    if (typeof task.category === 'string') {
+      return categories.find(c => c._id === task.category);
+    }
+    
+    return null;
+  };
+
+  const taskCategory = getTaskCategory();
   const hasDueDate = Boolean(task.dueDate);
   const shouldShowOverdue =
     hasDueDate &&
@@ -387,7 +520,6 @@ const TaskItem = ({ task, refreshTasks }) => {
               <ArrowPathIcon className="w-4 h-4" />
               Status
             </label>
-
             <select
               value={editData.status}
               onChange={(e) =>
@@ -397,7 +529,7 @@ const TaskItem = ({ task, refreshTasks }) => {
                         dark:bg-gray-700/50 dark:text-white
                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
                         outline-none transition-all duration-200
-                        hover:border-gray-400 dark:hover:border-gray-500 appearance-none"
+                        hover:border-gray-400 dark:hover:border-gray-500 appearance-none cursor-pointer"
             >
               <option value="Todo">Todo</option>
               <option value="In Progress">In Progress</option>
@@ -416,7 +548,7 @@ const TaskItem = ({ task, refreshTasks }) => {
                 onChange={(e) =>
                   setEditData({ ...editData, priority: e.target.value })
                 }
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 appearance-none"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 appearance-none cursor-pointer"
               >
                 <option value="Low">Low Priority</option>
                 <option value="Medium">Medium Priority</option>
@@ -435,9 +567,76 @@ const TaskItem = ({ task, refreshTasks }) => {
                 onChange={(e) =>
                   setEditData({ ...editData, dueDate: e.target.value })
                 }
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer"
               />
             </div>
+          </div>
+
+          {/* Category Selection Dropdown in Edit Form */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <TagIcon className="w-4 h-4" />
+              Category
+            </label>
+            <div className="relative">
+              <select
+                value={editData.category || ""}
+                onChange={(e) =>
+                  setEditData({ ...editData, category: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700/50 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 appearance-none cursor-pointer"
+                disabled={isCategoriesLoading}
+              >
+                <option value="">No Category</option>
+                {categories.map((category) => (
+                  <option key={category._id} value={category._id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                <ChevronDownIcon className="h-5 w-5" />
+              </div>
+              
+              {/* Current category preview in edit form */}
+              {editData.category && !isCategoriesLoading && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Current:</span>
+                  {(() => {
+                    // Find the current category in categories list
+                    const currentCategory = categories.find(c => c._id === editData.category);
+                    if (!currentCategory) return null;
+                    
+                    return (
+                      <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
+                        style={{
+                          backgroundColor: `${currentCategory.color}20`,
+                          color: currentCategory.color,
+                          border: `1px solid ${currentCategory.color}40`,
+                        }}
+                      >
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: currentCategory.color }}
+                        />
+                        {currentCategory.name}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+            
+            {isCategoriesLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                Loading categories...
+              </p>
+            ) : categories.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No categories available.
+              </p>
+            ) : null}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
@@ -507,6 +706,22 @@ const TaskItem = ({ task, refreshTasks }) => {
                 {getPriorityConfig(task.priority).icon}
                 {getPriorityConfig(task.priority).label}
               </div>
+
+              {/* Category Badge - Show only here with tag icon */}
+              {taskCategory && (
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200"
+                  style={{
+                    backgroundColor: `${taskCategory.color}20`,
+                    color: taskCategory.color,
+                    borderColor: `${taskCategory.color}40`,
+                  }}
+                  title={`Category: ${taskCategory.name}`}
+                >
+                  <TagIcon className="w-3 h-3" />
+                  {taskCategory.name}
+                </div>
+              )}
             </div>
 
             <h3
@@ -562,7 +777,7 @@ const TaskItem = ({ task, refreshTasks }) => {
           </div>
         </div>
 
-        {/* Task Metadata */}
+        {/* Task Metadata - Removed category from here since it's shown in badges */}
         <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-100/50 dark:border-gray-700/50">
           <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
             <CalendarIcon className="w-4 h-4" />
