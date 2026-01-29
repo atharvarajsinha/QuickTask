@@ -28,9 +28,22 @@ const Tasks = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { user } = useAuth();
 
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "Todo":
+        return "bg-yellow-600 text-white hover:bg-yellow-700";
+      case "In Progress":
+        return "bg-blue-600 text-white hover:bg-blue-700";
+      case "Completed":
+        return "bg-green-600 text-white hover:bg-green-700";
+      default:
+        return "bg-blue-600 text-white hover:bg-blue-700";
+    }
+  };
+
   // Advanced filter state
   const [filters, setFilters] = useState({
-    status: "",
+    status: [],
     priority: "",
     category: "",
     categories: "",
@@ -68,7 +81,11 @@ const Tasks = () => {
       const params = new URLSearchParams();
 
       // BASIC FILTERS
-      if (filters.status) params.append("status", filters.status);
+      if (filters.status.length > 0) {
+        filters.status.forEach(status => {
+          params.append("status", status);
+        });
+      }
       if (filters.priority) params.append("priority", filters.priority);
       if (filters.search) params.append("search", filters.search);
 
@@ -140,6 +157,14 @@ const Tasks = () => {
   };
 
   const handleFilterChange = (key, value) => {
+    if (key === "status" && value.length === 0) {
+      setFilters((prev) => ({
+        ...prev,
+        status: [],
+      }));
+      return;
+    }
+
     setFilters((prev) => ({
       ...prev,
       [key]: value,
@@ -221,7 +246,7 @@ const Tasks = () => {
 
   const getActiveFilterCount = () => {
     let count = 0;
-    if (filters.status) count++;
+    if (filters.status.length > 0) count++;
     if (filters.priority) count++;
     if (filters.category || filters.categories || filters.uncategorized) count++;
     if (filters.search) count++;
@@ -323,26 +348,44 @@ const Tasks = () => {
 
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-2">
-              {/* Status Filters */}
-              {["", "Todo", "In Progress", "Completed"].map((status) => (
+              {/* All Tasks Button */}
+              <button
+                onClick={() => handleFilterChange("status", [])}
+                className={`px-4 py-2 rounded-lg capitalize flex items-center gap-2 ${
+                  filters.status.length === 0
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
+                }`}
+              >
+                <ListBulletIcon className="h-4 w-4" />
+                All Tasks
+              </button>
+
+              {/* Multiple Status Filters */}
+              {["Todo", "In Progress", "Completed"].map((status) => (
                 <button
-                  key={status || "all"}
-                  onClick={() => handleFilterChange("status", status)}
+                  key={status}
+                  onClick={() => {
+                    const newStatuses = filters.status.includes(status)
+                      ? filters.status.filter(s => s !== status)
+                      : [...filters.status, status];
+                    handleFilterChange("status", newStatuses);
+                  }}
                   className={`px-4 py-2 rounded-lg capitalize flex items-center gap-2 ${
-                    filters.status === status
-                      ? "bg-blue-600 text-white"
+                    filters.status.includes(status)
+                      ? getStatusStyle(status)
                       : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
                   }`}
                 >
                   {status === "Todo" && <ClockIcon className="h-4 w-4" />}
-                  {status === "In Progress" && (
-                    <ArrowPathIcon className="h-4 w-4" />
+                  {status === "In Progress" && <ArrowPathIcon className="h-4 w-4" />}
+                  {status === "Completed" && <CheckCircleIcon className="h-4 w-4" />}
+                  {status}
+                  {filters.status.includes(status) && (
+                    <span className="ml-1 text-xs bg-white/20 rounded-full h-4 w-4 flex items-center justify-center">
+                      ✓
+                    </span>
                   )}
-                  {status === "Completed" && (
-                    <CheckCircleIcon className="h-4 w-4" />
-                  )}
-                  {status === "" && <ListBulletIcon className="h-4 w-4" />}
-                  {status || "All"}
                 </button>
               ))}
 
