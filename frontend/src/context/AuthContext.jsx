@@ -1,12 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { userAPI } from "../api/nodeApi";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +21,12 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, loading]);
 
   useEffect(() => {
     if (user?.darkMode !== undefined) {
