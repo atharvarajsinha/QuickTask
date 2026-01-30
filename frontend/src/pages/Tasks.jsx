@@ -82,9 +82,7 @@ const Tasks = () => {
 
       // BASIC FILTERS
       if (filters.status.length > 0) {
-        filters.status.forEach(status => {
-          params.append("status", status);
-        });
+        params.append("status", filters.status.join(","));
       }
       if (filters.priority) params.append("priority", filters.priority);
       if (filters.search) params.append("search", filters.search);
@@ -98,11 +96,6 @@ const Tasks = () => {
         } else {
           params.append("category", filters.category);
         }
-      }
-
-      // MULTIPLE CATEGORIES
-      if (filters.categories && !filters.uncategorized) {
-        params.append("categories", filters.categories);
       }
 
       // DATE FILTERS
@@ -181,19 +174,10 @@ const Tasks = () => {
       }));
     }
 
-    // Handle category filter conflicts
+    // Handle category filter
     if (key === "category" && value) {
       setFilters((prev) => ({
         ...prev,
-        categories: "",
-        uncategorized: false,
-      }));
-    }
-
-    if (key === "categories" && value) {
-      setFilters((prev) => ({
-        ...prev,
-        category: "",
         uncategorized: false,
       }));
     }
@@ -202,7 +186,6 @@ const Tasks = () => {
       setFilters((prev) => ({
         ...prev,
         category: "",
-        categories: "",
       }));
     }
 
@@ -230,7 +213,6 @@ const Tasks = () => {
       status: "",
       priority: "",
       category: "",
-      categories: "",
       dueDateFilter: "",
       dueFrom: "",
       dueTo: "",
@@ -248,7 +230,7 @@ const Tasks = () => {
     let count = 0;
     if (filters.status.length > 0) count++;
     if (filters.priority) count++;
-    if (filters.category || filters.categories || filters.uncategorized) count++;
+    if (filters.category || filters.uncategorized) count++;
     if (filters.search) count++;
     if (filters.dueDateFilter) count++;
     if (filters.overdue) count++;
@@ -276,19 +258,7 @@ const Tasks = () => {
       const category = categories.find(c => c._id === filters.category);
       return category ? [category.name] : [];
     }
-    if (filters.categories) {
-      const categoryIds = filters.categories.split(",");
-      return categories
-        .filter(c => categoryIds.includes(c._id))
-        .map(c => c.name);
-    }
     return [];
-  };
-
-  // Get category color by ID
-  const getCategoryColor = (categoryId) => {
-    const category = categories.find(c => c._id === categoryId);
-    return category ? category.color : "#6b7280";
   };
 
   if (loading) {
@@ -445,15 +415,6 @@ const Tasks = () => {
                             handleFilterChange("uncategorized", false);
                           } else if (filters.category) {
                             handleFilterChange("category", "");
-                          } else if (filters.categories) {
-                            const categoryId = category?._id;
-                            if (categoryId) {
-                              const newCategories = filters.categories
-                                .split(",")
-                                .filter(id => id !== categoryId)
-                                .join(",");
-                              handleFilterChange("categories", newCategories || "");
-                            }
                           }
                         }}
                         className="ml-1 hover:opacity-70 cursor-pointer"
@@ -510,21 +471,24 @@ const Tasks = () => {
                       ))}
                     </select>
                   </div>
-
-                  {/* Multiple Categories Filter */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Multiple Categories (comma-separated IDs)
-                    </label>
+                  
+                  {/* Uncategorized Filter */}
+                  <div className="flex items-center gap-2">
                     <input
-                      type="text"
-                      value={filters.categories}
+                      type="checkbox"
+                      id="uncategorized"
+                      checked={filters.uncategorized}
                       onChange={(e) =>
-                        handleFilterChange("categories", e.target.value)
+                        handleFilterChange("uncategorized", e.target.checked)
                       }
-                      placeholder="e.g., id1,id2,id3"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
+                    <label
+                      htmlFor="uncategorized"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      Uncategorized Only
+                    </label>
                   </div>
                 </div>
 
@@ -564,25 +528,6 @@ const Tasks = () => {
                       className="text-sm font-medium text-gray-700 dark:text-gray-300"
                     >
                       Show Overdue Only
-                    </label>
-                  </div>
-
-                  {/* Uncategorized Filter */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="uncategorized"
-                      checked={filters.uncategorized}
-                      onChange={(e) =>
-                        handleFilterChange("uncategorized", e.target.checked)
-                      }
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label
-                      htmlFor="uncategorized"
-                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                    >
-                      Uncategorized Only
                     </label>
                   </div>
                 </div>
