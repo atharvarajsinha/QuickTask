@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { userAPI } from "../api/nodeApi";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { navLinks } from "../components/NavLinks";
 
 const AuthContext = createContext();
 
@@ -9,6 +10,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,10 +25,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading && user) {
+    const protectedRoutes = navLinks.map((l) => l.to);
+    if (!loading && user && !protectedRoutes.includes(location.pathname)) {
       navigate("/dashboard", { replace: true });
     }
-  }, [user, loading]);
+  }, [user, loading, location.pathname]);
 
   useEffect(() => {
     if (user?.darkMode !== undefined) {
